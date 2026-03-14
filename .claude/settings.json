@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /Users/adarsh/Downloads/yash_crm/apps/web/app/\\\\\\(dashboard\\\\\\))",
+      "Bash(ls /Users/adarsh/Downloads/yash_crm/apps/web/.env*)"
+    ],
+    "additionalDirectories": [
+      "/Users/adarsh/Downloads/yash_crm/apps/web/app/q/[quoteNumber]"
+    ]
+  }
+}

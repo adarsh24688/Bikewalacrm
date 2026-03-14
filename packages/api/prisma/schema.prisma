@@ -1,0 +1,384 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────
+
+enum Role {
+  super_admin
+  manager
+  sales_rep
+  frontdesk
+}
+
+enum LeadStatus {
+  new
+  contacted
+  qualified
+  proposal_sent
+  negotiation
+  won
+  lost
+}
+
+enum LeadPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum FollowUpType {
+  call
+  whatsapp
+  email
+  visit
+  meeting
+}
+
+enum FollowUpStatus {
+  scheduled
+  completed
+  missed
+  cancelled
+}
+
+enum QuotationStatus {
+  draft
+  sent
+  accepted
+  rejected
+  expired
+  revised
+}
+
+enum MessageDirection {
+  inbound
+  outbound
+}
+
+enum MessageStatus {
+  pending
+  sent
+  delivered
+  read
+  failed
+}
+
+enum WaSessionStatus {
+  connecting
+  connected
+  disconnected
+}
+
+enum RuleTrigger {
+  lead_created
+  status_changed
+}
+
+enum RuleAction {
+  create_followup
+  send_whatsapp
+  send_email
+}
+
+enum ProductCategory {
+  ev
+  motorcycle
+  scooter
+}
+
+// ─── Models ──────────────────────────────────────────────────
+
+model Branch {
+  id      String @id @default(uuid())
+  name    String
+  city    String?
+  address String?
+
+  allowedUsers AllowedUser[]
+  leads        Lead[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("branches")
+}
+
+model AllowedUser {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  role        Role     @default(sales_rep)
+  branchId    String?  @map("branch_id")
+  branch      Branch?  @relation(fields: [branchId], references: [id])
+  invitedBy   String?  @map("invited_by")
+  invitedAt   DateTime @default(now()) @map("invited_at")
+  lastLoginAt DateTime? @map("last_login_at")
+  isActive    Boolean  @default(true) @map("is_active")
+
+  profile UserProfile?
+
+  @@map("allowed_users")
+}
+
+model UserProfile {
+  id            String  @id @default(uuid())
+  email         String  @unique
+  name          String
+  avatarUrl     String? @map("avatar_url")
+  allowedUserId String  @unique @map("allowed_user_id")
+  allowedUser   AllowedUser @relation(fields: [allowedUserId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("user_profiles")
+}
+
+model Lead {
+  id              String      @id @default(uuid())
+  name            String
+  phone           String
+  email           String?
+  source          String?
+  assignedTo      String?     @map("assigned_to")
+  branchId        String?     @map("branch_id")
+  branch          Branch?     @relation(fields: [branchId], references: [id])
+  status          LeadStatus  @default(new)
+  priority        LeadPriority @default(medium)
+  productInterest String[]    @map("product_interest")
+  notes           String?
+  nextFollowUp    DateTime?   @map("next_follow_up")
+  createdBy       String?     @map("created_by")
+
+  contacts     Contact[]
+  quotations   Quotation[]
+  followUps    FollowUp[]
+  activities   Activity[]
+  waMessages   WaMessage[]
+  waConversations WaConversation[]
+  autoFollowUpLogs AutoFollowUpLog[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([phone])
+  @@index([assignedTo])
+  @@index([status])
+  @@map("leads")
+}
+
+model Contact {
+  id      String  @id @default(uuid())
+  name    String
+  phone   String
+  email   String?
+  address String?
+  company String?
+  leadId  String? @map("lead_id")
+  lead    Lead?   @relation(fields: [leadId], references: [id])
+  tags    String[]
+
+  quotations Quotation[]
+  waMessages WaMessage[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("contacts")
+}
+
+model Product {
+  id             String          @id @default(uuid())
+  name           String
+  category       ProductCategory
+  subSegment     String?         @map("sub_segment")
+  tagline        String?
+  description    String?
+  basePrice      Decimal         @map("base_price") @db.Decimal(12, 2)
+  unit           String?         @default("unit")
+  heroImage      String?         @map("hero_image")
+  images         Json?
+  colorVariants  Json?           @map("color_variants")
+  specifications Json?
+  features       Json?
+  trims          Json?
+  isActive       Boolean         @default(true) @map("is_active")
+  sortOrder      Int             @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@map("products")
+}
+
+model Quotation {
+  id            String          @id @default(uuid())
+  quoteNumber   String          @unique @map("quote_number")
+  leadId        String          @map("lead_id")
+  lead          Lead            @relation(fields: [leadId], references: [id])
+  contactId     String?         @map("contact_id")
+  contact       Contact?        @relation(fields: [contactId], references: [id])
+  createdBy     String          @map("created_by")
+  status        QuotationStatus @default(draft)
+  lineItems     Json            @map("line_items")
+  subtotal      Decimal         @db.Decimal(12, 2)
+  discount      Decimal         @default(0) @db.Decimal(12, 2)
+  taxRate       Decimal         @default(18) @map("tax_rate") @db.Decimal(5, 2)
+  taxAmount     Decimal         @default(0) @map("tax_amount") @db.Decimal(12, 2)
+  total         Decimal         @db.Decimal(12, 2)
+  validUntil    DateTime?       @map("valid_until")
+  terms         String?
+  notes         String?
+  pdfUrl        String?         @map("pdf_url")
+  version       Int             @default(1)
+  parentQuoteId String?         @map("parent_quote_id")
+  sharedAt      DateTime?       @map("shared_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("quotations")
+}
+
+model FollowUp {
+  id          String         @id @default(uuid())
+  leadId      String         @map("lead_id")
+  lead        Lead           @relation(fields: [leadId], references: [id])
+  scheduledAt DateTime       @map("scheduled_at")
+  type        FollowUpType
+  notes       String?
+  status      FollowUpStatus @default(scheduled)
+  createdBy   String         @map("created_by")
+  completedAt DateTime?      @map("completed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("follow_ups")
+}
+
+model Activity {
+  id          String   @id @default(uuid())
+  leadId      String   @map("lead_id")
+  lead        Lead     @relation(fields: [leadId], references: [id])
+  type        String
+  description String?
+  performedBy String   @map("performed_by")
+  metadata    Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("activities")
+}
+
+model WaSession {
+  id             String          @id @default(uuid())
+  phoneNumber    String          @unique @map("phone_number")
+  status         WaSessionStatus @default(disconnected)
+  connectedAt    DateTime?       @map("connected_at")
+  disconnectedAt DateTime?       @map("disconnected_at")
+  authData       Json?           @map("auth_data")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("wa_sessions")
+}
+
+model WaMessage {
+  id          String           @id @default(uuid())
+  waMessageId String?          @map("wa_message_id")
+  direction   MessageDirection
+  fromNumber  String           @map("from_number")
+  toNumber    String           @map("to_number")
+  body        String?
+  mediaType   String?          @map("media_type")
+  mediaUrl    String?          @map("media_url")
+  status      MessageStatus    @default(pending)
+  leadId      String?          @map("lead_id")
+  lead        Lead?            @relation(fields: [leadId], references: [id])
+  contactId   String?          @map("contact_id")
+  contact     Contact?         @relation(fields: [contactId], references: [id])
+  sentBy      String?          @map("sent_by")
+  isAutomated Boolean          @default(false) @map("is_automated")
+  timestamp   DateTime         @default(now())
+
+  @@index([fromNumber, timestamp])
+  @@map("wa_messages")
+}
+
+model WaConversation {
+  id            String   @id @default(uuid())
+  contactNumber String   @unique @map("contact_number")
+  contactName   String?  @map("contact_name")
+  leadId        String?  @map("lead_id")
+  lead          Lead?    @relation(fields: [leadId], references: [id])
+  assignedTo    String?  @map("assigned_to")
+  lastMessageAt DateTime? @map("last_message_at")
+  unreadCount   Int      @default(0) @map("unread_count")
+  isArchived    Boolean  @default(false) @map("is_archived")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([contactNumber])
+  @@map("wa_conversations")
+}
+
+model FollowUpRule {
+  id              String      @id @default(uuid())
+  name            String
+  description     String?
+  triggerType     RuleTrigger @map("trigger_type")
+  conditions      Json?
+  fromStatus      String?     @map("from_status")
+  toStatus        String?     @map("to_status")
+  delayHours      Int         @default(0) @map("delay_hours")
+  actionType      RuleAction  @map("action_type")
+  messageTemplate String?     @map("message_template")
+  followUpType    String?     @map("follow_up_type")
+  isActive        Boolean     @default(true) @map("is_active")
+  createdBy       String      @map("created_by")
+
+  logs AutoFollowUpLog[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("follow_up_rules")
+}
+
+model AutoFollowUpLog {
+  id           String   @id @default(uuid())
+  ruleId       String   @map("rule_id")
+  rule         FollowUpRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  leadId       String   @map("lead_id")
+  lead         Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  status       String   @default("pending")
+  errorMessage String?  @map("error_message")
+  executedAt   DateTime? @map("executed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("auto_follow_up_logs")
+}
+
+model QuoteTemplate {
+  id        String   @id @default(uuid())
+  name      String
+  type      String   // "terms" or "notes"
+  content   String
+  isDefault Boolean  @default(false) @map("is_default")
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("quote_templates")
+}
