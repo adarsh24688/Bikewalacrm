@@ -1,6 +1,0 @@
-{
-  "buildCommand": "cd ../.. && pnpm install && pnpm --filter @yash-crm/web build",
-  "outputDirectory": ".next",
-  "installCommand": "",
-  "framework": "nextjs"
-}
