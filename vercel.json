@@ -1,6 +1,6 @@
 {
-  "buildCommand": "cd packages/api && npx prisma generate && cd ../../ && pnpm --filter @yash-crm/web build",
+  "buildCommand": "pnpm --filter @yash-crm/web build",
   "outputDirectory": "apps/web/.next",
-  "installCommand": "pnpm install",
+  "installCommand": "pnpm install --frozen-lockfile",
   "framework": "nextjs"
 }
