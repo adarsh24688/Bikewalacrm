@@ -1,6 +1,6 @@
 {
-  "buildCommand": "pnpm --filter @yash-crm/web build",
-  "outputDirectory": "apps/web/.next",
-  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "cd ../.. && pnpm install && pnpm --filter @yash-crm/web build",
+  "outputDirectory": ".next",
+  "installCommand": "",
   "framework": "nextjs"
 }
