@@ -151,7 +151,7 @@ export async function reportRoutes(app: FastifyInstance) {
         prisma.lead.count({ where: { createdAt: { gte: todayStart, lt: todayEnd } } }),
         prisma.lead.count({ where: { createdAt: { gte: yesterdayStart, lt: todayStart } } }),
         prisma.lead.count({ where: { createdAt: { gte: monthStart } } }),
-        prisma.lead.groupBy({ by: ["status"], _count: true, where: { createdAt: { gte: todayStart, lt: todayEnd } } }),
+        prisma.lead.groupBy({ by: ["status"], _count: true, orderBy: { _count: { status: "desc" } }, where: { createdAt: { gte: todayStart, lt: todayEnd } } }),
         prisma.lead.count({ where: { status: "won", updatedAt: { gte: todayStart, lt: todayEnd } } }),
         prisma.lead.count({ where: { status: "lost", updatedAt: { gte: todayStart, lt: todayEnd } } }),
         prisma.lead.count({ where: { status: "won", updatedAt: { gte: yesterdayStart, lt: todayStart } } }),
@@ -180,7 +180,7 @@ export async function reportRoutes(app: FastifyInstance) {
         prisma.followUp.count({ where: { scheduledAt: { gte: monthStart } } }),
         prisma.followUp.count({ where: { scheduledAt: { gte: monthStart }, status: "completed" } }),
         prisma.followUp.count({ where: { scheduledAt: { gte: monthStart }, status: "missed" } }),
-        prisma.lead.groupBy({ by: ["source"], _count: true, where: { createdAt: { gte: monthStart }, source: { not: null } } as any }),
+        prisma.lead.groupBy({ by: ["source"], _count: true, orderBy: { _count: { source: "desc" } }, where: { createdAt: { gte: monthStart }, source: { not: null } } as any }),
       ]);
 
       // Batch 3: Rep performance (sequential per rep to avoid pool exhaustion)
