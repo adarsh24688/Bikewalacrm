@@ -54,3 +54,14 @@ apps/web/public/workbox-*.js.map
 
 # Misc
 *.tsbuildinfo
+
+
+.github/
+.claude/
+agent_docs/
+docs/
+tests/
+*.md
+.dockerignore
+.claudeignore
+

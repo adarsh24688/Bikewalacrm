@@ -1,11 +1,52 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls /Users/adarsh/Downloads/yash_crm/apps/web/app/\\\\\\(dashboard\\\\\\))",
-      "Bash(ls /Users/adarsh/Downloads/yash_crm/apps/web/.env*)"
+      "Bash(npm run *)",
+      "Bash(npx *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git branch *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(find * -name *)"
     ],
-    "additionalDirectories": [
-      "/Users/adarsh/Downloads/yash_crm/apps/web/app/q/[quoteNumber]"
+    "deny": [
+      "Bash(git push *)",
+      "Bash(git push --force *)",
+      "Bash(rm -rf *)",
+      "Bash(DROP TABLE *)",
+      "Bash(curl * | bash)",
+      "Bash(npm publish *)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "BRANCH=$(git branch --show-current 2>/dev/null); if [ \"$BRANCH\" = \"main\" ] || [ \"$BRANCH\" = \"master\" ]; then echo '{\"block\":true,\"message\":\"❌ Direct edits on main/master are blocked. Create a feature branch first.\"}' >&2; exit 2; fi",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd $(git rev-parse --show-toplevel 2>/dev/null || pwd) && npm run typecheck 2>&1 | tail -10",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "NODE_ENV": "development"
   }
 }
