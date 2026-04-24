@@ -20,7 +20,9 @@ import { quoteTemplateRoutes } from "./routes/quote-templates";
 // import { startFollowUpWorker } from "./workers/followup.worker";
 
 const PORT = Number(process.env.PORT || process.env.API_PORT) || 4000;
-const HOST = process.env.API_HOST || "0.0.0.0";
+// Default to IPv6 any-address so the service is reachable on both IPv6 and IPv4 in hosted environments.
+// Override with `API_HOST=0.0.0.0` if your runtime doesn't support IPv6.
+const HOST = process.env.API_HOST || "::";
 
 async function main() {
   const app = Fastify({ logger: true });
