@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { PrintTrigger } from "./print-trigger";
-
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+import { API_URL } from "@/lib/api";
 
 interface QuoteData {
   quoteNumber: string;
@@ -33,8 +32,9 @@ interface QuoteData {
 }
 
 async function getQuote(quoteNumber: string): Promise<QuoteData | null> {
+  if (!API_URL) return null;
   try {
-    const res = await fetch(`${API}/q/${quoteNumber}`, {
+    const res = await fetch(`${API_URL}/q/${quoteNumber}`, {
       cache: "no-store",
     });
     if (!res.ok) return null;

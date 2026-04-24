@@ -133,7 +133,7 @@ SUPER_ADMIN_EMAIL=your-email@gmail.com
 
 # ── API ───────────────────────────────────────────────────
 API_PORT=4000
-API_URL=http://localhost:4000
+NEXT_PUBLIC_API_URL=http://localhost:4000
 
 # ── WhatsApp (Baileys Service) ────────────────────────────
 BAILEYS_PORT=4001
@@ -465,10 +465,12 @@ POST   /api/send/document        # Send document { to, document (base64), filena
 | `NEXTAUTH_SECRET` | Yes | - | Random secret for JWT signing |
 | `SUPER_ADMIN_EMAIL` | Yes | - | Email that gets super_admin role |
 | `API_PORT` | No | `4000` | Fastify API port |
-| `API_URL` | No | `http://localhost:4000` | API URL for frontend |
+| `NEXT_PUBLIC_API_URL` | No | `http://localhost:4000` | API URL for frontend (browser-accessible) |
 | `BAILEYS_PORT` | No | `4001` | WhatsApp service port |
 | `NEXT_PUBLIC_BAILEYS_URL` | No | `http://localhost:4001` | Baileys URL (browser-accessible) |
 | `BAILEYS_SERVICE_URL` | No | `http://localhost:4001` | Baileys URL (server-to-server) |
+| `BAILEYS_API_KEY` | No | - | Optional API key to protect Baileys HTTP endpoints (`/api/send/*`) |
+| `WA_AUTH_DIR` | No | `./wa-auth` | Directory for storing WhatsApp auth state (use a persistent volume in production) |
 | `DEFAULT_COUNTRY_CODE` | No | `91` | Country code for phone normalization |
 | `OPENAI_API_KEY` | No | - | Enables AI message generation |
 | `RESEND_API_KEY` | No | - | Enables email sending |
@@ -551,7 +553,14 @@ pnpm build
 # Start production servers
 cd apps/web && pnpm start          # Next.js on port 3000
 cd packages/api && pnpm start      # Fastify on port 4000
-cd packages/baileys-service && pnpm dev  # Baileys (no build step, runs tsx)
+cd packages/baileys-service && pnpm start  # Baileys (WhatsApp service) on port 4001
 ```
 
 For production, use a process manager like **PM2** or deploy as containers.
+
+### Deploying the Web App on Vercel
+
+If you deploy only `apps/web` to Vercel, you must deploy the Fastify API (`packages/api`) and the WhatsApp service (`packages/baileys-service`) separately (any Node host/VPS). Then set these in Vercel and redeploy:
+
+- `NEXT_PUBLIC_API_URL` → your API origin
+- `NEXT_PUBLIC_BAILEYS_URL` → your Baileys service origin

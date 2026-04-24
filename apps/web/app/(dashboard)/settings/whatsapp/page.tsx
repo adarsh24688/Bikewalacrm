@@ -16,7 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const BAILEYS_URL =
-  process.env.NEXT_PUBLIC_BAILEYS_URL || "http://localhost:4001";
+  process.env.NEXT_PUBLIC_BAILEYS_URL ||
+  (process.env.NODE_ENV === "development" ? "http://localhost:4001" : "");
 
 type ConnectionStatus = "connected" | "disconnected" | "connecting";
 
@@ -77,6 +78,12 @@ export default function WhatsAppSettingsPage() {
 
   // Socket.io connection to Baileys service
   useEffect(() => {
+    if (!BAILEYS_URL) {
+      setSocketConnected(false);
+      setError("NEXT_PUBLIC_BAILEYS_URL is not configured.");
+      return;
+    }
+
     const socket = io(BAILEYS_URL, {
       transports: ["websocket", "polling"],
       reconnectionAttempts: 5,

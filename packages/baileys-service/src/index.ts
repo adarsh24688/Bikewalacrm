@@ -7,11 +7,15 @@ import {
 import { Boom } from "@hapi/boom";
 import { Server } from "socket.io";
 import { createServer } from "http";
+import * as path from "path";
 import { handleIncomingMessage } from "./handlers/onMessage";
 import { handleStatusUpdate } from "./handlers/onStatusUpdate";
 import { sendText, sendMedia } from "./senders/sendText";
 import { prisma } from "./lib/prisma";
-const PORT = Number(process.env.BAILEYS_PORT) || 4001;
+
+const PORT = Number(process.env.PORT || process.env.BAILEYS_PORT) || 4001;
+const WA_AUTH_DIR = process.env.WA_AUTH_DIR || "./wa-auth";
+const BAILEYS_API_KEY = process.env.BAILEYS_API_KEY || "";
 
 let sock: ReturnType<typeof makeWASocket> | null = null;
 let io: Server;
@@ -41,7 +45,7 @@ export function resolvePhoneFromJid(jid: string): string {
 }
 
 async function startSocket() {
-  const { state, saveCreds } = await useMultiFileAuthState("./wa-auth");
+  const { state, saveCreds } = await useMultiFileAuthState(WA_AUTH_DIR);
   const { version } = await fetchLatestBaileysVersion();
 
   sock = makeWASocket({
@@ -265,6 +269,15 @@ async function main() {
     }
 
     if (req.method === "POST" && req.url === "/api/send/text") {
+      if (BAILEYS_API_KEY) {
+        const provided = req.headers["x-api-key"];
+        if (typeof provided !== "string" || provided !== BAILEYS_API_KEY) {
+          res.writeHead(401, { ...cors, "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Unauthorized" }));
+          return;
+        }
+      }
+
       let body = "";
       req.on("data", (chunk) => (body += chunk));
       req.on("end", async () => {
@@ -297,6 +310,15 @@ async function main() {
     }
 
     if (req.method === "POST" && req.url === "/api/send/document") {
+      if (BAILEYS_API_KEY) {
+        const provided = req.headers["x-api-key"];
+        if (typeof provided !== "string" || provided !== BAILEYS_API_KEY) {
+          res.writeHead(401, { ...cors, "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Unauthorized" }));
+          return;
+        }
+      }
+
       const chunks: Buffer[] = [];
       req.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
       req.on("end", async () => {
@@ -360,7 +382,7 @@ async function main() {
   // Auto-start if auth state exists
   try {
     const fs = await import("fs");
-    if (fs.existsSync("./wa-auth/creds.json")) {
+    if (fs.existsSync(path.join(WA_AUTH_DIR, "creds.json"))) {
       console.log("Found existing auth state, auto-connecting...");
       startSocket();
     } else {

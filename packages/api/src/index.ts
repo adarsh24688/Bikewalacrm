@@ -19,7 +19,7 @@ import { uploadRoutes } from "./routes/uploads";
 import { quoteTemplateRoutes } from "./routes/quote-templates";
 // import { startFollowUpWorker } from "./workers/followup.worker";
 
-const PORT = Number(process.env.API_PORT) || 4000;
+const PORT = Number(process.env.PORT || process.env.API_PORT) || 4000;
 const HOST = process.env.API_HOST || "0.0.0.0";
 
 async function main() {
