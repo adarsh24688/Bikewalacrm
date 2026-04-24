@@ -12,13 +12,9 @@ build/
 .turbo/
 
 # Environment
-.env
-.env.local
-.env.production
 .env.*.local
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -65,3 +61,4 @@ tests/
 .dockerignore
 .claudeignore
 
+config.bat
