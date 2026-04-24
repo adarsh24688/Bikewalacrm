@@ -463,6 +463,7 @@ POST   /api/send/document        # Send document { to, document (base64), filena
 | `GOOGLE_CLIENT_SECRET` | Yes | - | Google OAuth client secret |
 | `NEXTAUTH_URL` | Yes | `http://localhost:3000` | App URL for auth callbacks |
 | `NEXTAUTH_SECRET` | Yes | - | Random secret for JWT signing |
+| `CORS_ORIGINS` | No | - | Comma-separated allowed origins for the API (e.g. `https://your-app.vercel.app`) |
 | `SUPER_ADMIN_EMAIL` | Yes | - | Email that gets super_admin role |
 | `API_PORT` | No | `4000` | Fastify API port |
 | `NEXT_PUBLIC_API_URL` | No | `http://localhost:4000` | API URL for frontend (browser-accessible) |
