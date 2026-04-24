@@ -8,7 +8,7 @@ export async function requireAuth(
   reply: FastifyReply
 ) {
   if (!request.user) {
-    reply.code(401).send({ error: "Unauthorized" });
+    return reply.code(401).send({ error: "Unauthorized" });
   }
 }
 

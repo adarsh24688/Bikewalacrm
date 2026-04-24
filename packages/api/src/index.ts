@@ -27,8 +27,29 @@ const HOST = process.env.API_HOST || "::";
 async function main() {
   const app = Fastify({ logger: true });
 
+  const normalizeOrigin = (value: string) => value.trim().replace(/\/+$/, "");
+  const allowedOrigins = new Set<string>(
+    [
+      ...(process.env.CORS_ORIGINS
+        ? process.env.CORS_ORIGINS.split(",").map(normalizeOrigin)
+        : []),
+      ...(process.env.NEXTAUTH_URL ? [normalizeOrigin(process.env.NEXTAUTH_URL)] : []),
+      ...(process.env.NODE_ENV === "development" ? ["http://localhost:3000"] : []),
+    ].filter(Boolean)
+  );
+
   await app.register(cors, {
-    origin: process.env.NEXTAUTH_URL || "http://localhost:3000",
+    origin: (origin, cb) => {
+      // Non-browser clients may send no Origin header.
+      if (!origin) return cb(null, true);
+
+      const normalized = normalizeOrigin(origin);
+      if (allowedOrigins.has("*") || allowedOrigins.has(normalized)) {
+        return cb(null, true);
+      }
+
+      return cb(null, false);
+    },
     credentials: true,
   });
 
