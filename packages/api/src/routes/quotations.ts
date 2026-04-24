@@ -174,7 +174,21 @@ export async function quotationRoutes(app: FastifyInstance) {
         return reply.code(400).send({ error: "Lead has no phone number" });
       }
 
-      const baileysUrl = process.env.BAILEYS_SERVICE_URL || "http://localhost:4001";
+      const baileysUrl =
+        process.env.BAILEYS_SERVICE_URL ||
+        (process.env.NODE_ENV === "development" ? "http://localhost:4001" : "");
+      if (!baileysUrl) {
+        return reply
+          .code(500)
+          .send({ error: "BAILEYS_SERVICE_URL is not configured" });
+      }
+
+      const baileysHeaders: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(process.env.BAILEYS_API_KEY
+          ? { "x-api-key": process.env.BAILEYS_API_KEY }
+          : {}),
+      };
 
       // Use frontend-captured PDF if provided, otherwise generate server-side
       let pdfB64: string;
@@ -212,7 +226,7 @@ export async function quotationRoutes(app: FastifyInstance) {
       const caption = `Quotation ${quotation.quoteNumber} — Total: ₹${Number(quotation.total).toLocaleString("en-IN")}`;
       const docRes = await fetch(`${baileysUrl}/api/send/document`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: baileysHeaders,
         body: JSON.stringify({
           to: phone,
           document: pdfB64,
@@ -241,7 +255,7 @@ export async function quotationRoutes(app: FastifyInstance) {
 
       await fetch(`${baileysUrl}/api/send/text`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: baileysHeaders,
         body: JSON.stringify({ to: phone, text: message }),
       });
     }

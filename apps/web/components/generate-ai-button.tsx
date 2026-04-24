@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+import { API_URL } from "@/lib/api";
 
 interface GenerateAIButtonProps {
   leadId?: string;
@@ -20,7 +19,12 @@ export function GenerateAIButton({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`${API}/ai/status`)
+    if (!API_URL) {
+      setAvailable(false);
+      return;
+    }
+
+    fetch(`${API_URL}/ai/status`)
       .then((r) => r.json())
       .then((d) => setAvailable(d.available))
       .catch(() => setAvailable(false));
@@ -29,9 +33,10 @@ export function GenerateAIButton({
   if (!available) return null;
 
   async function handleGenerate() {
+    if (!API_URL) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API}/ai/generate-message`, {
+      const res = await fetch(`${API_URL}/ai/generate-message`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ leadId, actionType }),

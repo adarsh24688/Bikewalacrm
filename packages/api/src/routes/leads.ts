@@ -102,7 +102,17 @@ export async function leadRoutes(app: FastifyInstance) {
 
     // Send WhatsApp welcome message (fire-and-forget)
     if (lead.phone) {
-      const baileysUrl = process.env.BAILEYS_SERVICE_URL || "http://localhost:4001";
+      const baileysUrl =
+        process.env.BAILEYS_SERVICE_URL ||
+        (process.env.NODE_ENV === "development" ? "http://localhost:4001" : "");
+      if (!baileysUrl) return reply.code(201).send(lead);
+
+      const baileysHeaders: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(process.env.BAILEYS_API_KEY
+          ? { "x-api-key": process.env.BAILEYS_API_KEY }
+          : {}),
+      };
       const firstName = lead.name.split(" ")[0];
       const welcome = [
         `Hello ${firstName}! 👋`,
@@ -119,7 +129,7 @@ export async function leadRoutes(app: FastifyInstance) {
 
       fetch(`${baileysUrl}/api/send/text`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: baileysHeaders,
         body: JSON.stringify({ to: lead.phone, text: welcome }),
       }).catch((err) => console.error("Welcome WhatsApp failed:", err.message));
     }

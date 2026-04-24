@@ -1,4 +1,13 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+function normalizeBaseUrl(url: string) {
+  return url.replace(/\/+$/, "");
+}
+
+const DEV_DEFAULT_API_URL = "http://localhost:4000";
+
+export const API_URL = normalizeBaseUrl(
+  process.env.NEXT_PUBLIC_API_URL ||
+    (process.env.NODE_ENV === "development" ? DEV_DEFAULT_API_URL : "")
+);
 
 export class ApiError extends Error {
   status: number;
@@ -13,6 +22,13 @@ export async function apiFetch<T>(
   options?: RequestInit & { token?: string }
 ): Promise<T> {
   const { token, ...init } = options || {};
+
+  if (!API_URL) {
+    throw new ApiError(
+      "API base URL not configured. Set NEXT_PUBLIC_API_URL in your environment.",
+      500
+    );
+  }
 
   if (!token) {
     throw new ApiError("Not authenticated", 401);
@@ -40,6 +56,13 @@ export async function apiUpload<T>(
   file: File,
   token: string
 ): Promise<T> {
+  if (!API_URL) {
+    throw new ApiError(
+      "API base URL not configured. Set NEXT_PUBLIC_API_URL in your environment.",
+      500
+    );
+  }
+
   const formData = new FormData();
   formData.append("file", file);
 
